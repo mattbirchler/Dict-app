@@ -23,9 +23,6 @@ final class ParakeetTranscriptionService: TranscriptionEngine {
     private static let modelVersion = AsrModelVersion.v3
     private static let sampleRate = 16_000
     private let maxEnergySamples = 64
-    /// People release the hotkey while still finishing their last word, so
-    /// keep capturing this long after stop() before shutting the mic off.
-    static let releaseTail: Duration = .milliseconds(250)
     /// Silence added to both ends of the recording before decoding. The
     /// recording starts and stops abruptly at the hotkey, and Parakeet drops
     /// or garbles words that sit right at a hard edge.
@@ -154,9 +151,10 @@ final class ParakeetTranscriptionService: TranscriptionEngine {
             endLivePreview()
             return ""
         }
-        // Keep capturing through the release tail. A cancel() during the
-        // sleep tears down and empties the buffer, so this stop returns "".
-        try? await Task.sleep(for: Self.releaseTail)
+        // People let go while still finishing a sentence, so keep
+        // capturing until they go quiet. A cancel() during the wait tears
+        // down and empties the buffer, so this stop returns "".
+        await waitForReleaseTail()
         isRecording = false
         // Let an in-flight preview decode finish before the final one, so
         // two decodes never interleave inside the AsrManager actor.
@@ -180,6 +178,21 @@ final class ParakeetTranscriptionService: TranscriptionEngine {
 
         Log.engine.info("Recording stopped: \(samples.count, privacy: .public) samples, transcribing")
         return try await transcribeRecording(samples)
+    }
+
+    /// Waits at least ReleaseTail.minimum, then until the speaker has
+    /// been quiet for a moment or ReleaseTail.maximum has passed.
+    private func waitForReleaseTail() async {
+        let clock = ContinuousClock()
+        let released = clock.now
+        try? await Task.sleep(for: ReleaseTail.minimum)
+        while clock.now - released < ReleaseTail.maximum {
+            let samples = recordedSamples.withLock { $0 }
+            if samples.isEmpty || ReleaseTail.endsQuietly(samples, sampleRate: Self.sampleRate) { break }
+            try? await Task.sleep(for: ReleaseTail.pollInterval)
+        }
+        let waited = clock.now - released
+        Log.engine.info("Release tail: \(waited, privacy: .public)")
     }
 
     /// Decodes one full recording with a fresh decoder state. Internal (not
