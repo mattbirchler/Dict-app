@@ -182,3 +182,63 @@ extension FillerRemover {
         return token.replacingCharacters(in: index...index, with: token[index].uppercased())
     }
 }
+
+/// The on-device model ends most Tidy passes with a question mark, even
+/// after a plain statement ("I think we're in good shape?"). A "?" the
+/// speech engine didn't write survives only when its sentence reads like a
+/// question: a clause opens with a question word or auxiliary ("what",
+/// "did you", "but can we"), or it ends with a tag like "right".
+enum QuestionMarkGuard {
+    static let openers: Set<String> = [
+        "who", "whom", "whose", "what", "when", "where", "why", "how", "which",
+        "is", "are", "am", "was", "were", "do", "does", "did", "can", "could",
+        "will", "would", "should", "shall", "may", "might", "must", "have", "has", "had",
+        "isnt", "arent", "wasnt", "werent", "dont", "doesnt", "didnt", "cant", "couldnt",
+        "wont", "wouldnt", "shouldnt", "havent", "hasnt", "hadnt", "any", "anyone", "anybody",
+        "whats", "whos", "wheres", "hows", "whys",
+    ]
+
+    /// Words after which a new clause starts, so "but did you" counts.
+    static let clauseJoiners: Set<String> = [
+        "and", "but", "so", "or", "then", "also", "well", "okay", "ok", "yeah", "now", "oh",
+    ]
+
+    static let tags: Set<String> = ["right", "correct", "huh", "eh", "ok", "okay", "yeah", "no"]
+
+    static func apply(_ output: String, input: String) -> String {
+        let spokenQuestions = Set(input.split(separator: "?", omittingEmptySubsequences: false)
+            .dropLast()
+            .compactMap { TidyCheck.words(String($0)).last?.key })
+
+        var result = ""
+        var sentence = ""
+        for character in output {
+            if character == "?" {
+                let words = TidyCheck.words(sentence)
+                let keep = words.last.map { spokenQuestions.contains($0.key) } ?? true
+                    || readsAsQuestion(sentence)
+                result += sentence + (keep ? "?" : ".")
+                sentence = ""
+            } else if ".!\n".contains(character) {
+                result += sentence + String(character)
+                sentence = ""
+            } else {
+                sentence.append(character)
+            }
+        }
+        return result + sentence
+    }
+
+    static func readsAsQuestion(_ sentence: String) -> Bool {
+        let raw = sentence.split(whereSeparator: \.isWhitespace)
+        var clauseStart = true
+        for (index, token) in raw.enumerated() {
+            guard let word = TidyCheck.words(String(token)).first?.key else { continue }
+            if clauseStart, openers.contains(word) { return true }
+            if index == raw.count - 1, index > 0, tags.contains(word),
+               raw[index - 1].last == "," { return true }
+            clauseStart = token.last.map { ",;:".contains($0) } ?? false || clauseJoiners.contains(word)
+        }
+        return false
+    }
+}

@@ -124,8 +124,10 @@ final class TranscriptFormatter {
         You are a transcription punctuation tool. Fix the capitalization, \
         punctuation, and spelling of names in a raw dictation transcript. \
         Capitalize proper nouns: people, places, companies, products and \
-        apps, using their usual casing ("iPhone", "macOS", "YouTube"). Use a \
-        question mark when a sentence is a question. Remove only filler \
+        apps, using their usual casing ("iPhone", "macOS", "YouTube"). End \
+        statements with a period. Use a question mark only for a direct \
+        question, one that starts with a question word ("who", "what", \
+        "why", "how", "can you", "did you", "is it"). Remove only filler \
         sounds ("um", "uh", "er", "ah", "hmm") and words the speaker \
         stumbled on and immediately repeated ("the the", "I think I \
         think"). Every other word must appear exactly as spoken and in the \
@@ -136,10 +138,10 @@ final class TranscriptFormatter {
         topic clearly shifts. When unsure, leave the text exactly as it is.
 
         Example input:
-        um so i think the the update is like really solid but uh did you send it to katie at apple yet i mean the final version
+        um so i think the the update is like really solid but uh did you send it to katie at apple yet i mean the final version is what i want them to see
 
         Example output:
-        So I think the update is like really solid, but did you send it to Katie at Apple yet? I mean the final version.
+        So I think the update is like really solid, but did you send it to Katie at Apple yet? I mean the final version is what I want them to see.
 
         Output only the corrected text, with no preamble or commentary.
         """
@@ -225,6 +227,7 @@ final class TranscriptFormatter {
                     return fallback
                 }
                 output = FillerRemover.cleanPunctuated(output)
+                output = QuestionMarkGuard.apply(output, input: input)
             } else if style != .verbatim {
                 output = FillerRemover.clean(output)
             }
