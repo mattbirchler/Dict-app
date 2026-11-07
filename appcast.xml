@@ -7,6 +7,25 @@
         <language>en</language>
         <item>
             <title>Dict 1.0</title>
+            <pubDate>Sat, 07 Nov 2026 14:22:45 GMT</pubDate>
+            <sparkle:version>12</sparkle:version>
+            <sparkle:shortVersionString>1.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description><![CDATA[
+<h3>Dict 1.0 (build 12)</h3>
+<p>This build fixes three things that made dictation feel unreliable.</p>
+<h3>Your last words make it in</h3>
+<p>If you let go of the dictation key while you were still finishing a sentence, the end of it could go missing, sometimes several words. Dict now keeps listening after you let go until you&#x27;ve actually stopped talking, then inserts everything you said. If you&#x27;d already finished, nothing changes. If you were mid-sentence, the text shows up a moment later with nothing cut off.</p>
+<h3>Fewer stray question marks</h3>
+<p>In hands-free mode, Dict tidies up punctuation for you, and it had a habit of ending ordinary statements with a question mark (&quot;I think we&#x27;re in good shape?&quot;). Now a question mark only appears when what you said reads like a question.</p>
+<h3>No extra space on empty lines in Obsidian</h3>
+<p>With &quot;Add a space before dictation when needed&quot; turned on, dictating onto a fresh line in Obsidian could start with a stray space. Dict now recognizes the start of a line there and leaves the space out.</p>
+            ]]></description>
+            <enclosure url="https://github.com/mattbirchler/Dict-releases/releases/download/v1.0-12/Dict-1.0-12.zip" type="application/octet-stream" sparkle:edSignature="EuKlYAk5ltLmkRlq2i/EbY7zweDEQHkeyO8UjpAvhfdpwYhUZsTALurpmLmU/IJSqlSrqxhS7KZmVT7wu7J0Cw==" length="9333340"/>
+        </item>
+        <item>
+            <title>Dict 1.0</title>
             <pubDate>Fri, 06 Nov 2026 23:35:58 GMT</pubDate>
             <sparkle:version>11</sparkle:version>
             <sparkle:shortVersionString>1.0</sparkle:shortVersionString>
