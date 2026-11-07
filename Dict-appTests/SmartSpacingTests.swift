@@ -29,4 +29,19 @@ struct SmartSpacingTests {
     @Test func noSpaceForEmptyText() {
         #expect(!SmartSpacing.needsLeadingSpace(preceding: "d", text: ""))
     }
+
+    @Test func skipsZeroWidthSpaceOnAnEmptyObsidianLine() {
+        // What Obsidian reports before the cursor on some empty lines.
+        let preceding = SmartSpacing.lastVisibleCharacter(in: "fun!\n\u{200B}")
+        #expect(preceding == "\n")
+        #expect(!SmartSpacing.needsLeadingSpace(preceding: preceding, text: "Hello"))
+    }
+
+    @Test func onlyInvisibleCharactersCountAsStartOfField() {
+        #expect(SmartSpacing.lastVisibleCharacter(in: "\u{200B}\u{FEFF}") == nil)
+    }
+
+    @Test func stillSpacesAfterAWordFollowedByAZeroWidthSpace() {
+        #expect(SmartSpacing.lastVisibleCharacter(in: "word\u{200B}") == "d")
+    }
 }

@@ -65,9 +65,9 @@ final class TextInsertionService {
         guard AXValueGetValue(rangeRef as! AXValue, .cfRange, &selection),
               selection.length == 0, selection.location > 0 else { return nil }
 
-        // Ask for two UTF-16 units so a character outside the BMP (emoji)
-        // isn't split; take the last full character of what comes back.
-        let start = max(0, selection.location - 2)
+        // Ask for several UTF-16 units: enough that an emoji isn't split,
+        // and enough to see past zero-width characters to the real one.
+        let start = max(0, selection.location - 8)
         var precedingRange = CFRange(location: start, length: selection.location - start)
         guard let precedingValue = AXValueCreate(.cfRange, &precedingRange) else { return nil }
         var stringRef: CFTypeRef?
@@ -77,7 +77,7 @@ final class TextInsertionService {
             precedingValue,
             &stringRef
         ) == .success, let preceding = stringRef as? String else { return nil }
-        return preceding.last
+        return SmartSpacing.lastVisibleCharacter(in: preceding)
     }
 
     private func savePasteboard(_ pasteboard: NSPasteboard) -> [[NSPasteboard.PasteboardType: Data]] {

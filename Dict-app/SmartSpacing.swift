@@ -16,6 +16,19 @@ enum SmartSpacing {
         ".", ",", ";", ":", "!", "?", ")", "]", "}", "\u{201D}", "\u{2019}", "%",
     ]
 
+    /// Characters with no width that editors scatter through their text.
+    /// Obsidian (CodeMirror) puts a zero-width space on empty lines, and
+    /// Swift doesn't count it as whitespace, so it looked like a word.
+    private static let invisibleCharacters: Set<Character> = [
+        "\u{200B}", "\u{200C}", "\u{200D}", "\u{2060}", "\u{FEFF}", "\u{FFFC}",
+    ]
+
+    /// The last character of `text` that isn't invisible, or nil when
+    /// there is none (the cursor is effectively at the start of the field).
+    static func lastVisibleCharacter(in text: String) -> Character? {
+        text.last { !invisibleCharacters.contains($0) }
+    }
+
     /// - Parameter preceding: the character before the cursor, or nil when
     ///   the cursor is at the start of the field or the app doesn't expose it.
     static func needsLeadingSpace(preceding: Character?, text: String) -> Bool {
